@@ -3,10 +3,7 @@ const BOARD_SIZE = 35,
       PLAY_SIZE = 980,
       SELECTION_SET = new Set([]);
       TILE_ARRAY = [],
-      TILE_COLOR = 'grey',
       PATH_COLOR = '#b0b0b0',
-      SELECTED_COLOR = 'red',
-      CHECKPOINT_COLOR = 'blue',
       CHECKPOINT_LIST = [38, 598, 626, 136, 122, 1102, 1118];
 
 var canvas = document.getElementById("gameCanvas");
@@ -32,6 +29,7 @@ function createBoard() {
     stage.addChild(currTile.shape);
   }
   // uh oh, this doesnt look good
+  // feel like this should be handled in tile, but it only needs to be done once
   let vertFill = true;
   for (let chkPoint = 0; chkPoint < CHECKPOINT_LIST.length - 1; chkPoint++) {
     chkStartX = CHECKPOINT_LIST[chkPoint] % BOARD_SIZE;
@@ -72,8 +70,12 @@ addEventListener('click', (event) => {
   }
 });
 
+testEnemy = new Enemy();
+stage.addChild(testEnemy.shape)
+
 function handleTick(event) {
-   // tile.x += 1
+  testEnemy.move()
+
    // stage.addChild(tile);
    stage.update();
 }

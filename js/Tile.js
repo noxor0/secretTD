@@ -1,3 +1,6 @@
+const SELECTED_COLOR = 'green',
+      CHECKPOINT_COLOR = 'blue',
+      TILE_COLOR = 'grey';
 
 class Tile {
   constructor(x, y, checkpoint) {
