@@ -21,13 +21,16 @@ class Enemy {
     this.checkpointTodo.shift();
     this.pathTaken = [];
 
-    this.moveSpeed = 6;
+    this.moveSpeed = 1;
     this.currSpeed = this.moveSpeed;
-
     this.doMove()
   }
 
   getNeighbors() {
+    if (this.tile.index == this.checkpointTodo[0]) {
+      this.checkpointTodo.shift();
+      this.pathTaken.length = 0;
+    }
     const neighbors = []
     let col = Math.floor(this.x / 28);
     let row = Math.floor(this.y / 28);
@@ -62,7 +65,6 @@ class Enemy {
         }
     }
     // lowestTile.changeColor('pink');
-    this.pathTaken.push(lowestTile);
     return lowestTile
   }
 
@@ -73,20 +75,16 @@ class Enemy {
   }
 
   changeVelTowards(bestTile) {
+    if (!bestTile) {return};
     this.dX = Math.sign(bestTile.x - this.tile.x);
     this.dY = Math.sign(bestTile.y - this.tile.y);
   }
 
   checkTileChange() {
-    let mid = [14, 0]
-    if (mid.includes(this.x % BLOCK_SIZE) && mid.includes(this.y % BLOCK_SIZE)){
+    let midBlock = 14;
+    if (this.x % BLOCK_SIZE == midBlock && this.y % BLOCK_SIZE == midBlock){
       let potNewTile = getTileAt(Math.floor(this.x / BLOCK_SIZE), Math.floor(this.y / BLOCK_SIZE));
-      // console.log(potNewTile.index);
       if (potNewTile != this.tile) {
-        if (potNewTile.index == this.checkpointTodo[0]) {
-          this.checkpointTodo.shift();
-          this.pathTaken = [];
-        }
         this.tile = potNewTile
         return true
       }
@@ -106,13 +104,16 @@ class Enemy {
 
     if (this.checkpointTodo.length == 0) {return;}
     if (this.checkTileChange()) {
-      this.doMove()
+      this.doMove();
+      this.pathTaken.push(this.tile);
+      console.log(this.tile);
+      console.log(this.pathTaken);
     }
     this.x += this.dX;
     this.y += this.dY;
     this.shape.x += this.dX;
     this.shape.y += this.dY;
-    console.log("this.(%d, %d) this.shape.(%d, %d)",this.x, this.y, this.shape.x, this.shape.y);
+    // console.log("this.(%d, %d) this.shape.(%d, %d)",this.x, this.y, this.shape.x, this.shape.y);
 
     if (this.currSpeed > 0) {
       this.move(this.currSpeed)
