@@ -11,9 +11,11 @@ class Node {
     this.cost = startCost + finishCost;
   }
   equals(otherNode){
-    if (this === otherNode) return true;
-    if (this.tile === otherNode.tile) return true;
-    if (this.tile.x == otherNode.tile.x && this.tile.y == otherNode.tile.y) return true;
-    return false;
+    let retValue = false;
+    if (this === otherNode) retValue = true;
+    if (this.tile === otherNode.tile) retValue = true;
+    if (this.tile.index == otherNode.tile.index) retValue = true;
+    // console.log(retValue, this.tile, otherNode.tile)
+    return retValue;
   }
 }

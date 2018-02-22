@@ -65,14 +65,14 @@ function createBoard() {
         chkEndY = [chkStartY, chkStartY = chkEndY][0];
       }
       for (let i = chkStartY + 1; i < chkEndY; i++) {
-        TILE_ARRAY[i * BOARD_SIZE + chkStartX].changeColor(PATH_COLOR);
+        TILE_ARRAY[i * BOARD_SIZE + chkStartX].changePermColor(PATH_COLOR);
       }
     } else {
       if (chkStartX > chkEndX) {
         chkEndX = [chkStartX, chkStartX = chkEndX][0];
       }
       for (let i = chkStartX + 1; i < chkEndX; i++) {
-        TILE_ARRAY[chkStartY * BOARD_SIZE + i].changeColor(PATH_COLOR);
+        TILE_ARRAY[chkStartY * BOARD_SIZE + i].changePermColor(PATH_COLOR);
       }
     }
 

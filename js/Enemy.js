@@ -32,22 +32,31 @@ class Enemy {
   }
 
   aStar(startTile, endTile) {
-    let open = [new Node(0, 0, startTile)];
-    let closed = [];
-    let closedTiles = []
+    let open = new Set([new Node(0, 0, startTile)]);
+    let openTiles = new Set([startTile])
+    let closed = new Set([]);
+    let closedTiles = new Set([]);
     // Loop till return
-    while(true) {
+    while(open.size) {
+    // for(let i = 0; i < 1; i++) {
       // Find the lowest cost in the open array, and set to current
-      let current = open.sort(function(a, b){return a.cost - b.cost;}).shift();
-      // Dont let open array get bigger than 100, trim values that are too high
-      // This really doesnt help
-      if (open.length > 100) {
-        open.length = 100
-      }
+      let current = new Node(Number.MAX_VALUE, Number.MAX_VALUE);
+      open.forEach(function(openVal) {
+        if (openVal.cost < current.cost) {
+          current = openVal
+        }
+      });
+      // current.tile.changeTempColor('orange')
+      stage.update()
+
+      // Remove it from the set
+      open.delete(current);
+      openTiles.delete(current.tile);
+      // let current = open.sort(function(a, b){return a.cost - b.cost;}).shift();
       // current is now closed
-      closed.push(current);
+      closed.add(current);
       // additional data structure for easier includes checking
-      closedTiles.push(current.tile);
+      closedTiles.add(current.tile);
       // End node?
       if (current.tile === endTile) return this.getPath(current);
       // Get neighbors of our current node
@@ -56,33 +65,48 @@ class Enemy {
       for (let nIndex in neighbors) {
         let neighborTile = neighbors[nIndex];
         // check if theyre in the close tiles list
-        if (closedTiles.includes(neighborTile)) continue;
+        if (closedTiles.has(neighborTile)) continue;
         //create a node for the neighbor with its costs
-        let startCost = findDistance(neighborTile.x, neighborTile.y, startTile.x, startTile.y)
+        let startCost = current.startCost + 1
         let endCost = findDistance(neighborTile.x, neighborTile.y, endTile.x, endTile.y)
         let neighborNode = new Node(startCost, endCost, neighborTile, current);
+        neighborNode.tile.changeTempColor('pink');
         //check if in OPEN or if its shorter path to a neighbor
-        for (let oIndex in open) {
-          // if the neighbor node is in the open list, skip it
-          if(open[oIndex].equals(neighborNode)) {
-            // UNLESS its cost is smaller than another node, that points to the same tile, in the open list
-            if(open[oIndex].cost > neighborNode.cost) {
-              // update it then, and skip
-              open[oIndex] = neighborNode;
-              break;
-            }
-          } else {
-            // its not in the open list, so lets add it
-            open.push(neighborNode);
-            neighborNode.tile.changeColor('pink');
-            stage.update()
-            break;
-          }
+
+        if (openTiles.has(neighborNode.tile)) {
+          open.forEach(function (openVal) {
+            if (openVal.equals(neighborNode) && openVal.cost > neighborNode.cost) openVal = neighborNode; return;
+          });
+        } else {
+          open.add(neighborNode);
+          openTiles.add(neighborNode.tile);
         }
+
+        // for (let oNode of open) {
+        //   // if the neighbor node is in the open list, skip it
+        //   if(oNode.equals(neighborNode)) {
+        //     console.log("aoeu");
+        //     // UNLESS its cost is smaller than another node, that points to the same tile, in the open list
+        //     if(oNode.cost > neighborNode.cost) {
+        //       // update it then, and skip
+        //       oNode = neighborNode;
+        //       break;
+        //     }
+        //   } else {
+        //     // its not in the open list, so lets add it
+        //     open.add(neighborNode);
+        //     openTiles.add(neighborNode.tile)
+        //     break;
+        //   }
+        // }
+
         // if the list is empty, just add the node
-        if (!open.length) open.push(neighborNode);
+        if (!open.size) open.add(neighborNode); openTiles.add(neighborNode.tile)
+        // current.tile.changeTempColor('brown');
+        // stage.update()
       }
     }
+    return ['no path'];
   }
 
   getPath(endNode) {
@@ -90,7 +114,7 @@ class Enemy {
     let retPath = [];
     while(runner.parent) {
       retPath.push(runner.tile);
-      runner.tile.changeColor('purple')
+      runner.tile.changeTempColor('purple')
       runner = runner.parent;
     }
     return retPath

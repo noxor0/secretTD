@@ -21,9 +21,15 @@ class Tile {
     this.shape.graphics.drawRect(this.x, this.y, BLOCK_SIZE, BLOCK_SIZE);
   }
 
-  changeColor(color) {
-    this.color = color
-    this.shape.graphics.beginStroke("black").beginFill(this.color);
+  changePermColor(color) {
+    this.color = color;
+    this.shape.graphics.beginStroke("black").beginFill(color);
+    this.shape.graphics.drawRect(this.x, this.y, BLOCK_SIZE, BLOCK_SIZE);
+    return true
+  }
+
+  changeTempColor(color) {
+    this.shape.graphics.beginStroke("black").beginFill(color);
     this.shape.graphics.drawRect(this.x, this.y, BLOCK_SIZE, BLOCK_SIZE);
     return true
   }
