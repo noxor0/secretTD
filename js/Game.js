@@ -9,6 +9,29 @@ const BOARD_SIZE = 35,
 var canvas = document.getElementById("gameCanvas");
 var stage = new createjs.Stage(canvas);
 
+function getNeighbors(tile) {
+  // if (tile.index == this.checkpointTodo[0]) {
+  //   this.checkpointTodo.shift();
+  //   this.pathTaken.length = 0;
+  // }
+  const neighbors = []
+  const nIndexes = [-1, +1, (-1*BOARD_SIZE), BOARD_SIZE];
+  for (let i = 0; i < nIndexes.length; i++) {
+    let possTile = TILE_ARRAY[tile.index + nIndexes[i]];
+    //TODO: Change this to unpathable later
+    if (possTile && !possTile.selected) {
+      neighbors.push(possTile);
+    }
+  }
+  return neighbors
+}
+
+function findDistance(x1, y1, x2, y2) {
+  const xDist = x2 - x1;
+  const yDist = y2 - y1;
+  return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+}
+
 function getTileAt(col, row) {
   let index = row * BOARD_SIZE + col;
   return TILE_ARRAY[index]
@@ -70,12 +93,21 @@ addEventListener('click', (event) => {
   }
 });
 
-testEnemy = new Enemy();
-stage.addChild(testEnemy.shape)
+addEventListener('keypress', (event) => {
+  // console.log(event);
+  testEnemy = new Enemy();
+  stage.addChild(testEnemy.shape)
+});
+
+
+// TILE_ARRAY[200].changeColor('purple')
+// for (let i = 0; i < getNeighbors(TILE_ARRAY[200]).length; i++) {
+//   getNeighbors(TILE_ARRAY[200])[i].changeColor('pink');
+// }
 // console.log(TILE_ARRAY);
 
 function handleTick(event) {
-  testEnemy.move();
+  // testEnemy.move();
   // stage.addChild(tile);
   stage.update();
 }

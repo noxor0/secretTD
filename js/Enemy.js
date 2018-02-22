@@ -2,82 +2,104 @@ class Enemy {
   // maybe take a dict with hp, damage, name or whatever
   // maybe just a name to refrence from a json?
   constructor() {
-    this.y = BLOCK_SIZE * 1.5 ;
-    this.x = BLOCK_SIZE * 3.5;
-    this.tile = getTileAt(Math.floor(this.x / 28), Math.floor(this.y / 28));
+    this.tile = TILE_ARRAY[38];
+    this.x = this.tile.x + BLOCK_SIZE/2;
+    this.y = this.tile.y + BLOCK_SIZE/2;
+    this.size = BLOCK_SIZE/3;
     this.dX = 0;
     this.dY = 0;
+
+    // gameplay stuff
     this.color = 'red';
-    // haha
     this.flying = false;
+    this.moveSpeed = 1;
+    this.currSpeed = this.moveSpeed;
+
     this.shape = new createjs.Shape();
     this.shape.graphics.beginStroke("black").beginFill(this.color);
     // shapes x, y relative to start point
-    this.shape.graphics.drawCircle(0, 0, BLOCK_SIZE/3);
+    this.shape.graphics.drawCircle(0, 0, this.size);
     this.shape.x += this.x;
     this.shape.y += this.y;
-    // refresh this on each wave
+
     this.checkpointTodo = CHECKPOINT_LIST;
     this.checkpointTodo.shift();
-    this.pathTaken = [];
 
-    this.moveSpeed = 1;
-    this.currSpeed = this.moveSpeed;
-    this.doMove()
+
+    this.pathToCheckpoint = this.aStar(this.tile, TILE_ARRAY[CHECKPOINT_LIST[0]]);
+    console.log(this.pathToCheckpoint);
+
   }
 
-  getNeighbors() {
-    if (this.tile.index == this.checkpointTodo[0]) {
-      this.checkpointTodo.shift();
-      this.pathTaken.length = 0;
-    }
-    const neighbors = []
-    let col = Math.floor(this.x / 28);
-    let row = Math.floor(this.y / 28);
-    this.tile.index = row * BOARD_SIZE + col;
-
-    neighbors.push(TILE_ARRAY[this.tile.index - 1]);
-    neighbors.push(TILE_ARRAY[this.tile.index + 1]);
-    neighbors.push(TILE_ARRAY[this.tile.index - BOARD_SIZE]);
-    neighbors.push(TILE_ARRAY[this.tile.index + BOARD_SIZE]);
-    // neighbors.push(TILE_ARRAY[this.tile.index - BOARD_SIZE - 1]);
-    // neighbors.push(TILE_ARRAY[this.tile.index - BOARD_SIZE + 1]);
-    // neighbors.push(TILE_ARRAY[this.tile.index + BOARD_SIZE - 1]);
-    // neighbors.push(TILE_ARRAY[this.tile.index + BOARD_SIZE + 1]);
-    return neighbors
-  }
-
-  //finds path to the element left in the array
-  findBest(neighbors) {
-    let chkX = this.checkpointTodo[0] % BOARD_SIZE;
-    let chkY = Math.floor(this.checkpointTodo[0] / BOARD_SIZE);
-    let lowestTile;
-    let lowestDist = Number.MAX_VALUE;
-    for (let i = 0; i < neighbors.length; i++) {
-      if (!neighbors[i]) {continue;}
-      if (neighbors[i].selected) {continue;}
-      if (this.pathTaken.includes(neighbors[i])) {continue;}
-        let col = Math.floor(neighbors[i].x / 28);
-        let row = Math.floor(neighbors[i].y / 28);
-        if (this.findDistance(col, row, chkX, chkY) < lowestDist) {
-          lowestDist = Math.min(lowestDist, this.findDistance(col, row, chkX, chkY))
-          lowestTile = neighbors[i];
+  aStar(startTile, endTile) {
+    let open = [new Node(0, 0, startTile)];
+    let closed = [];
+    let closedTiles = []
+    // Loop till return
+    while(true) {
+      // Find the lowest cost in the open array, and set to current
+      let current = open.sort(function(a, b){return a.cost - b.cost;}).shift();
+      // Dont let open array get bigger than 100, trim values that are too high
+      // This really doesnt help
+      if (open.length > 100) {
+        open.length = 100
+      }
+      // current is now closed
+      closed.push(current);
+      // additional data structure for easier includes checking
+      closedTiles.push(current.tile);
+      // End node?
+      if (current.tile === endTile) return this.getPath(current);
+      // Get neighbors of our current node
+      let neighbors = getNeighbors(current.tile);
+      // for all 4, at the most, neighbors
+      for (let nIndex in neighbors) {
+        let neighborTile = neighbors[nIndex];
+        // check if theyre in the close tiles list
+        if (closedTiles.includes(neighborTile)) continue;
+        //create a node for the neighbor with its costs
+        let startCost = findDistance(neighborTile.x, neighborTile.y, startTile.x, startTile.y)
+        let endCost = findDistance(neighborTile.x, neighborTile.y, endTile.x, endTile.y)
+        let neighborNode = new Node(startCost, endCost, neighborTile, current);
+        //check if in OPEN or if its shorter path to a neighbor
+        for (let oIndex in open) {
+          // if the neighbor node is in the open list, skip it
+          if(open[oIndex].equals(neighborNode)) {
+            // UNLESS its cost is smaller than another node, that points to the same tile, in the open list
+            if(open[oIndex].cost > neighborNode.cost) {
+              // update it then, and skip
+              open[oIndex] = neighborNode;
+              break;
+            }
+          } else {
+            // its not in the open list, so lets add it
+            open.push(neighborNode);
+            neighborNode.tile.changeColor('pink');
+            stage.update()
+            break;
+          }
         }
+        // if the list is empty, just add the node
+        if (!open.length) open.push(neighborNode);
+      }
     }
-    // lowestTile.changeColor('pink');
-    return lowestTile
   }
 
-  findDistance(x1, y1, x2, y2) {
-    const xDist = x2 - x1;
-    const yDist = y2 - y1;
-    return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
+  getPath(endNode) {
+    let runner = endNode;
+    let retPath = [];
+    while(runner.parent) {
+      retPath.push(runner.tile);
+      runner.tile.changeColor('purple')
+      runner = runner.parent;
+    }
+    return retPath
   }
 
-  changeVelTowards(bestTile) {
-    if (!bestTile) {return};
-    this.dX = Math.sign(bestTile.x - this.tile.x);
-    this.dY = Math.sign(bestTile.y - this.tile.y);
+  changeVelTowards(nextTile) {
+    if (!nextTile) {return};
+    this.dX = Math.sign(nextTile.x - this.tile.x);
+    this.dY = Math.sign(nextTile.y - this.tile.y);
   }
 
   checkTileChange() {
@@ -90,7 +112,6 @@ class Enemy {
       }
     }
     return false
-
   }
 
   doMove() {
@@ -102,12 +123,10 @@ class Enemy {
   move() {
     this.currSpeed--;
 
-    if (this.checkpointTodo.length == 0) {return;}
+    if (this.checkpointTodo.length == 0) return;
     if (this.checkTileChange()) {
-      this.doMove();
-      this.pathTaken.push(this.tile);
-      console.log(this.tile);
-      console.log(this.pathTaken);
+      // this.doMove();
+      // this.pathTaken.push(this.tile);
     }
     this.x += this.dX;
     this.y += this.dY;
