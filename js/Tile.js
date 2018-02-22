@@ -3,13 +3,14 @@ const SELECTED_COLOR = 'green',
       TILE_COLOR = 'grey';
 
 class Tile {
-  constructor(x, y, checkpoint) {
+  constructor(x, y, index, checkpoint) {
     this.x = x;
     this.y = y;
     this.color = TILE_COLOR;
     this.selected = false;
     this.tower = null;
-    this.checkpoint = checkpoint
+    this.checkpoint = checkpoint;
+    this.index = index;
 
     if (checkpoint) {
       this.color = CHECKPOINT_COLOR;

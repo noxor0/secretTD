@@ -21,9 +21,9 @@ function createBoard() {
     let currTile;
 
     if (CHECKPOINT_LIST.includes(index)) {
-      currTile = new Tile(tileX, tileY, true);
+      currTile = new Tile(tileX, tileY, index, true);
     } else {
-      currTile = new Tile(tileX, tileY);
+      currTile = new Tile(tileX, tileY, index);
     }
     TILE_ARRAY.push(currTile);
     stage.addChild(currTile.shape);
@@ -72,10 +72,10 @@ addEventListener('click', (event) => {
 
 testEnemy = new Enemy();
 stage.addChild(testEnemy.shape)
+// console.log(TILE_ARRAY);
 
 function handleTick(event) {
-  testEnemy.move()
-
-   // stage.addChild(tile);
-   stage.update();
+  testEnemy.move();
+  // stage.addChild(tile);
+  stage.update();
 }

@@ -4,35 +4,43 @@ class Enemy {
   constructor() {
     this.y = BLOCK_SIZE * 1.5 ;
     this.x = BLOCK_SIZE * 3.5;
-    this.index = 0;
+    this.tile = getTileAt(Math.floor(this.x / 28), Math.floor(this.y / 28));
     this.dX = 0;
-    this.dY = 3;
+    this.dY = 0;
     this.color = 'red';
     // haha
     this.flying = false;
     this.shape = new createjs.Shape();
     this.shape.graphics.beginStroke("black").beginFill(this.color);
-    this.shape.graphics.drawCircle(this.x, this.y, BLOCK_SIZE/3);
+    // shapes x, y relative to start point
+    this.shape.graphics.drawCircle(0, 0, BLOCK_SIZE/3);
+    this.shape.x += this.x;
+    this.shape.y += this.y;
     // refresh this on each wave
     this.checkpointTodo = CHECKPOINT_LIST;
     this.checkpointTodo.shift();
-    this.pathTaken = []
+    this.pathTaken = [];
+
+    this.moveSpeed = 6;
+    this.currSpeed = this.moveSpeed;
+
+    this.doMove()
   }
 
   getNeighbors() {
     const neighbors = []
     let col = Math.floor(this.x / 28);
     let row = Math.floor(this.y / 28);
-    this.index = row * BOARD_SIZE + col;
+    this.tile.index = row * BOARD_SIZE + col;
 
-    neighbors.push(TILE_ARRAY[this.index - 1]);
-    neighbors.push(TILE_ARRAY[this.index + 1]);
-    neighbors.push(TILE_ARRAY[this.index - BOARD_SIZE]);
-    neighbors.push(TILE_ARRAY[this.index + BOARD_SIZE]);
-    neighbors.push(TILE_ARRAY[this.index - BOARD_SIZE - 1]);
-    neighbors.push(TILE_ARRAY[this.index - BOARD_SIZE + 1]);
-    neighbors.push(TILE_ARRAY[this.index + BOARD_SIZE - 1]);
-    neighbors.push(TILE_ARRAY[this.index + BOARD_SIZE + 1]);
+    neighbors.push(TILE_ARRAY[this.tile.index - 1]);
+    neighbors.push(TILE_ARRAY[this.tile.index + 1]);
+    neighbors.push(TILE_ARRAY[this.tile.index - BOARD_SIZE]);
+    neighbors.push(TILE_ARRAY[this.tile.index + BOARD_SIZE]);
+    // neighbors.push(TILE_ARRAY[this.tile.index - BOARD_SIZE - 1]);
+    // neighbors.push(TILE_ARRAY[this.tile.index - BOARD_SIZE + 1]);
+    // neighbors.push(TILE_ARRAY[this.tile.index + BOARD_SIZE - 1]);
+    // neighbors.push(TILE_ARRAY[this.tile.index + BOARD_SIZE + 1]);
     return neighbors
   }
 
@@ -42,10 +50,8 @@ class Enemy {
     let chkY = Math.floor(this.checkpointTodo[0] / BOARD_SIZE);
     let lowestTile;
     let lowestDist = Number.MAX_VALUE;
-    //console.log(lowestDist);
     for (let i = 0; i < neighbors.length; i++) {
       if (!neighbors[i]) {continue;}
-      // check if occupied
       if (neighbors[i].selected) {continue;}
       if (this.pathTaken.includes(neighbors[i])) {continue;}
         let col = Math.floor(neighbors[i].x / 28);
@@ -54,10 +60,8 @@ class Enemy {
           lowestDist = Math.min(lowestDist, this.findDistance(col, row, chkX, chkY))
           lowestTile = neighbors[i];
         }
-        // console.log(lowestTile);
     }
-    // console.log("lowest", lowestTile);
-    lowestTile.changeColor('pink');
+    // lowestTile.changeColor('pink');
     this.pathTaken.push(lowestTile);
     return lowestTile
   }
@@ -65,32 +69,57 @@ class Enemy {
   findDistance(x1, y1, x2, y2) {
     const xDist = x2 - x1;
     const yDist = y2 - y1;
-
     return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
   }
 
-  changeVel(bestTile) {
-    // console.log(this, bestTile);
-    this.dX = bestTile.x - this.x;
-    this.dY = bestTile.y - this.y;
+  changeVelTowards(bestTile) {
+    this.dX = Math.sign(bestTile.x - this.tile.x);
+    this.dY = Math.sign(bestTile.y - this.tile.y);
+  }
 
-    // console.log(this.dX, this.dY);
+  checkTileChange() {
+    let mid = [14, 0]
+    if (mid.includes(this.x % BLOCK_SIZE) && mid.includes(this.y % BLOCK_SIZE)){
+      let potNewTile = getTileAt(Math.floor(this.x / BLOCK_SIZE), Math.floor(this.y / BLOCK_SIZE));
+      // console.log(potNewTile.index);
+      if (potNewTile != this.tile) {
+        if (potNewTile.index == this.checkpointTodo[0]) {
+          this.checkpointTodo.shift();
+          this.pathTaken = [];
+        }
+        this.tile = potNewTile
+        return true
+      }
+    }
+    return false
 
   }
 
-  move() {
-    if (this.index == this.checkpointTodo[0]) {
-      this.checkpointTodo.shift();
-      this.pathTaken = [];
-    }
-    let neighbors = this.getNeighbors()
-    let bestTile = this.findBest(neighbors);
-    this.changeVel(bestTile);
+  doMove() {
+      let neighbors = this.getNeighbors()
+      let bestTile = this.findBest(neighbors);
+      this.changeVelTowards(bestTile);
+  }
 
+  move() {
+    this.currSpeed--;
+
+    if (this.checkpointTodo.length == 0) {return;}
+    if (this.checkTileChange()) {
+      this.doMove()
+    }
     this.x += this.dX;
     this.y += this.dY;
     this.shape.x += this.dX;
     this.shape.y += this.dY;
+    console.log("this.(%d, %d) this.shape.(%d, %d)",this.x, this.y, this.shape.x, this.shape.y);
+
+    if (this.currSpeed > 0) {
+      this.move(this.currSpeed)
+    }
+    if (this.currSpeed <= 0) {
+      this.currSpeed = this.moveSpeed;
+    }
   }
 
 }
