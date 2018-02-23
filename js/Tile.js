@@ -34,7 +34,7 @@ class Tile {
     return true
   }
 
-  clicked(SELECTION_SET) {
+  clicked() {
     this.selected = !this.selected;
     let newColor;
     if (this.selected) {

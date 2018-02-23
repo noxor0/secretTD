@@ -6,22 +6,22 @@ const BOARD_SIZE = 35,
       PATH_COLOR = '#b0b0b0',
       CHECKPOINT_LIST = [38, 598, 626, 136, 122, 1102, 1118];
 
+const LAZY = [563, 597, 669, 705, 741, 777, 632, 668, 813, 849, 885, 921, 957, 993, 1029, 1065, 1101, 1137, 1103, 1069, 1035, 967, 1001, 933, 899, 865, 831, 797, 763, 660, 695, 729, 591, 627, 628, 629, 599, 601, 600, 602, 605, 603, 604, 607, 608, 610, 611, 612, 609, 606, 577, 647, 613, 578, 576, 646, 648, 507, 508, 509, 580, 545, 615, 685, 650, 719, 718, 717, 716, 715, 679, 505, 506, 539, 472, 297, 437, 402, 367, 332, 192, 157, 227, 262, 123, 87, 52, 17, 625, 410]
+
 var canvas = document.getElementById("gameCanvas");
 var stage = new createjs.Stage(canvas);
 
 function getNeighbors(tile) {
-  // if (tile.index == this.checkpointTodo[0]) {
-  //   this.checkpointTodo.shift();
-  //   this.pathTaken.length = 0;
-  // }
   const neighbors = []
   const nIndexes = [-1, +1, (-1*BOARD_SIZE), BOARD_SIZE];
   for (let i = 0; i < nIndexes.length; i++) {
-    let possTile = TILE_ARRAY[tile.index + nIndexes[i]];
+    let newIndex = tile.index + nIndexes[i];
+    if (newIndex < 0 || newIndex > TILE_ARRAY.length - 1) continue;
+    let possTile = TILE_ARRAY[newIndex];
     //TODO: Change this to unpathable later
-    if (possTile && !possTile.selected) {
-      neighbors.push(possTile);
-    }
+    if (possTile.x != tile.x && possTile.y != tile.y) continue;
+    if (possTile.selected) continue;
+    neighbors.push(possTile);
   }
   return neighbors
 }
@@ -80,7 +80,17 @@ function createBoard() {
   }
 }
 
+function deleteMe(object) {
+    stage.removeChild(object.shape)
+    object = null;
+    console.log("poof");
+}
+
 createBoard();
+for (let shit of LAZY) {
+  TILE_ARRAY[shit].clicked()
+}
+
 createjs.Ticker.addEventListener("tick", handleTick);
 
 addEventListener('click', (event) => {
@@ -89,25 +99,26 @@ addEventListener('click', (event) => {
     let clickCol = Math.floor(event.clientX / 28);
     let clickRow = Math.floor(event.clientY / 28);
     let tileClicked = getTileAt(clickCol, clickRow);
-    tileClicked.clicked(SELECTION_SET);
+    tileClicked.clicked();
   }
 });
 
+let testEnemy;
+let testEnemy2;
+
 addEventListener('keypress', (event) => {
-  // console.log(event);
-  testEnemy = new Enemy();
-  stage.addChild(testEnemy.shape)
+  if (!testEnemy) {
+    testEnemy = new Enemy();
+    stage.addChild(testEnemy.shape);
+  } else {
+    testEnemy2 = new Enemy();
+    stage.addChild(testEnemy2.shape)
+  }
 });
 
 
-// TILE_ARRAY[200].changeColor('purple')
-// for (let i = 0; i < getNeighbors(TILE_ARRAY[200]).length; i++) {
-//   getNeighbors(TILE_ARRAY[200])[i].changeColor('pink');
-// }
-// console.log(TILE_ARRAY);
-
 function handleTick(event) {
-  // testEnemy.move();
-  // stage.addChild(tile);
+  if (testEnemy) testEnemy.move();
+  if (testEnemy2) testEnemy2.move();
   stage.update();
 }

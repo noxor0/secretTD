@@ -12,7 +12,7 @@ class Enemy {
     // gameplay stuff
     this.color = 'red';
     this.flying = false;
-    this.moveSpeed = 1;
+    this.moveSpeed = 20;
     this.currSpeed = this.moveSpeed;
 
     this.shape = new createjs.Shape();
@@ -22,13 +22,11 @@ class Enemy {
     this.shape.x += this.x;
     this.shape.y += this.y;
 
-    this.checkpointTodo = CHECKPOINT_LIST;
+    this.checkpointTodo = CHECKPOINT_LIST.slice();
     this.checkpointTodo.shift();
 
-
-    this.pathToCheckpoint = this.aStar(this.tile, TILE_ARRAY[CHECKPOINT_LIST[0]]);
-    console.log(this.pathToCheckpoint);
-
+    this.pathToCheckpoint = this.aStar(this.tile, TILE_ARRAY[this.checkpointTodo[0]]);
+    this.changeVelTowards(this.pathToCheckpoint[0]);
   }
 
   aStar(startTile, endTile) {
@@ -38,21 +36,18 @@ class Enemy {
     let closedTiles = new Set([]);
     // Loop till return
     while(open.size) {
-    // for(let i = 0; i < 1; i++) {
       // Find the lowest cost in the open array, and set to current
-      let current = new Node(Number.MAX_VALUE, Number.MAX_VALUE);
+      let current = new Node(1000, 1000);
       open.forEach(function(openVal) {
         if (openVal.cost < current.cost) {
           current = openVal
         }
       });
       // current.tile.changeTempColor('orange')
-      stage.update()
-
+      // stage.update()
       // Remove it from the set
       open.delete(current);
       openTiles.delete(current.tile);
-      // let current = open.sort(function(a, b){return a.cost - b.cost;}).shift();
       // current is now closed
       closed.add(current);
       // additional data structure for easier includes checking
@@ -70,9 +65,8 @@ class Enemy {
         let startCost = current.startCost + 1
         let endCost = findDistance(neighborTile.x, neighborTile.y, endTile.x, endTile.y)
         let neighborNode = new Node(startCost, endCost, neighborTile, current);
-        neighborNode.tile.changeTempColor('pink');
+        // neighborNode.tile.changeTempColor('pink');
         //check if in OPEN or if its shorter path to a neighbor
-
         if (openTiles.has(neighborNode.tile)) {
           open.forEach(function (openVal) {
             if (openVal.equals(neighborNode) && openVal.cost > neighborNode.cost) openVal = neighborNode; return;
@@ -81,25 +75,6 @@ class Enemy {
           open.add(neighborNode);
           openTiles.add(neighborNode.tile);
         }
-
-        // for (let oNode of open) {
-        //   // if the neighbor node is in the open list, skip it
-        //   if(oNode.equals(neighborNode)) {
-        //     console.log("aoeu");
-        //     // UNLESS its cost is smaller than another node, that points to the same tile, in the open list
-        //     if(oNode.cost > neighborNode.cost) {
-        //       // update it then, and skip
-        //       oNode = neighborNode;
-        //       break;
-        //     }
-        //   } else {
-        //     // its not in the open list, so lets add it
-        //     open.add(neighborNode);
-        //     openTiles.add(neighborNode.tile)
-        //     break;
-        //   }
-        // }
-
         // if the list is empty, just add the node
         if (!open.size) open.add(neighborNode); openTiles.add(neighborNode.tile)
         // current.tile.changeTempColor('brown');
@@ -114,7 +89,7 @@ class Enemy {
     let retPath = [];
     while(runner.parent) {
       retPath.push(runner.tile);
-      runner.tile.changeTempColor('purple')
+      // runner.tile.changeTempColor('purple')
       runner = runner.parent;
     }
     return retPath
@@ -138,25 +113,26 @@ class Enemy {
     return false
   }
 
-  doMove() {
-      let neighbors = this.getNeighbors()
-      let bestTile = this.findBest(neighbors);
-      this.changeVelTowards(bestTile);
-  }
-
   move() {
     this.currSpeed--;
-
-    if (this.checkpointTodo.length == 0) return;
     if (this.checkTileChange()) {
-      // this.doMove();
-      // this.pathTaken.push(this.tile);
+      this.pathToCheckpoint.pop();
+      if (!this.pathToCheckpoint.length) {
+        this.checkpointTodo.shift();
+        if (this.checkpointTodo.length == 0) {
+          this.dX = 0;
+          this.dY = 0;
+          deleteMe(this);
+        } else {
+          this.pathToCheckpoint = this.aStar(this.tile, TILE_ARRAY[this.checkpointTodo[0]]);
+        }
+      }
+      this.changeVelTowards(this.pathToCheckpoint.slice(-1)[0]);
     }
     this.x += this.dX;
     this.y += this.dY;
     this.shape.x += this.dX;
     this.shape.y += this.dY;
-    // console.log("this.(%d, %d) this.shape.(%d, %d)",this.x, this.y, this.shape.x, this.shape.y);
 
     if (this.currSpeed > 0) {
       this.move(this.currSpeed)
@@ -165,5 +141,4 @@ class Enemy {
       this.currSpeed = this.moveSpeed;
     }
   }
-
 }
